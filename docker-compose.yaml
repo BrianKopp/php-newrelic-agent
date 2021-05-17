@@ -1,0 +1,33 @@
+version: '3'
+services:
+  phpfpm:
+    build:
+      context: .
+      dockerfile: docker/php-fpm/Dockerfile
+    command:
+      - php-fpm
+      - -d
+      - newrelic.license=$NEW_RELIC_LICENSE_KEY
+      - -d
+      - newrelic.appname=$NEW_RELIC_APP_NAME
+      - -d
+      - newrelic.daemon.address=nragent:31339
+    volumes:
+      - ./src:/var/www/html/public
+    depends_on:
+      - nragent
+    env_file:
+      - .env
+  nragent:
+    image: newrelic/php-daemon
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    volumes:
+      - ./src:/var/www
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - phpfpm
+    ports:
+      - "8080:80"
